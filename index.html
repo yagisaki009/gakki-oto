@@ -30,6 +30,7 @@ body{font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Hiragino Kaku Goth
 .pill span{position:relative;}
 .pill .hint{font-size:10px;font-weight:normal;opacity:.55;margin-left:5px;}
 #stop.off{opacity:.35;}
+@media (max-width:600px){.pill .hint{display:none}.pill{padding:0 10px;margin-left:6px}#title{font-size:15px}}
 
 #grid{position:fixed;left:0;top:0;right:0;bottom:0;}
 .tile{position:absolute;border-radius:20px;
@@ -80,6 +81,7 @@ body{font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Hiragino Kaku Goth
 <div id="bar">
   <div id="title">がっき おとボタン</div>
   <div id="pills">
+    <div class="pill" id="mode"><i class="fill"></i><span id="modeIcon">🎻</span> <span id="modeText">ほんもの</span><span class="hint">ながおし</span></div>
     <div class="pill off" id="stop"><span>■ とめる</span></div>
     <div class="pill" id="vol"><i class="fill"></i><span id="volIcon">🔉</span> <span id="volText">ふつう</span><span class="hint">ながおし</span></div>
   </div>
@@ -87,7 +89,7 @@ body{font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Hiragino Kaku Goth
 <div id="start">
   <div id="sTitle">がっき おとボタン</div>
   <div id="startBtn"><div class="big">🎵</div><div class="go">タップして はじめる</div></div>
-  <div id="hint">がっきを おすと きょくが ながれるよ。もういちど おすと つぎの きょく。<br>音が出ないときは、消音（マナーモード）をオフにして音量を上げてください。右上の 🔉 を長押しで音の大きさを3段階で変えられます。</div>
+  <div id="hint">がっきを おすと きょくが ながれるよ。もういちど おすと つぎの きょく。<br>音が出ないときは、消音（マナーモード）をオフにして音量を上げてください。右上の 🎻 を長押しで「ほんものの楽器の音」と「でんしおん」を切りかえ、🔉 を長押しで音の大きさを3段階で変えられます。</div>
 </div>
 
 <script src="data.js"></script>
@@ -200,27 +202,40 @@ function unlock() {
   }
 }
 
-/* 曲のファイルを読む → 音のデータにする（いま鳴らす曲と、次の曲だけ持つ） */
-var cache = {};   /* name -> AudioBuffer */
-function load(name, cb) {
-  if (cache[name]) { cb(cache[name]); return; }
+/* 'real' = ほんものの楽器の音（録音した楽器で演奏） / 'synth' = でんしおん */
+var mode = 'real';
+try { if (localStorage.getItem('gakki-oto-mode') === 'synth') mode = 'synth'; } catch (e) {}
+function dirOf(m) { return m === 'real' ? 'songs_real/' : 'songs/'; }
+
+/* 曲のファイルを読む → 音のデータにする（いま鳴らす曲と、次の曲だけ持つ）
+   読めなかったときは、もう一方のモードの同じ曲を使う（古いiPadのオフライン保存はほんもののみ） */
+var cache = {};   /* "mode:name" -> AudioBuffer */
+function load(name, cb, m, tried) {
+  m = m || mode;
+  var key = m + ':' + name;
+  if (cache[key]) { cb(cache[key]); return; }
   var x = new XMLHttpRequest();
-  x.open('GET', 'songs/' + name + '.m4a', true);
+  function fail() {
+    if (!tried) load(name, cb, m === 'real' ? 'synth' : 'real', true); else cb(null);
+  }
+  x.open('GET', dirOf(m) + name + '.m4a', true);
   x.responseType = 'arraybuffer';
   x.onload = function () {
-    if (!((x.status === 200 || x.status === 0) && x.response) || !ctx) { cb(null); return; }
+    if (!((x.status === 200 || x.status === 0) && x.response && x.response.byteLength) || !ctx) { fail(); return; }
     var called = false;
-    function done(b) { if (called) return; called = true; if (b) cache[name] = b; cb(b); }
+    function done(b) { if (called) return; called = true; if (b) { cache[key] = b; cb(b); } else fail(); }
     try {
       var p = ctx.decodeAudioData(x.response, function (b) { done(b); }, function () { done(null); });
       if (p && p['catch']) p['catch'](function () { done(null); });
     } catch (e) { done(null); }
   };
-  x.onerror = function () { cb(null); };
+  x.onerror = fail;
   x.send();
 }
 function keepOnly(names) {
-  for (var k in cache) if (cache.hasOwnProperty(k) && names.indexOf(k) < 0) delete cache[k];
+  var keep = [];
+  for (var i = 0; i < names.length; i++) { keep.push('real:' + names[i]); keep.push('synth:' + names[i]); }
+  for (var k in cache) if (cache.hasOwnProperty(k) && keep.indexOf(k) < 0) delete cache[k];
 }
 
 /* いま鳴っているもの */
@@ -332,14 +347,28 @@ function showVol() {
   $('volIcon').textContent = VOL_ICON[volIdx]; $('volText').textContent = VOL_NAME[volIdx];
   if (master) master.gain.value = VOLS[volIdx];
 }
+function showMode() {
+  $('modeIcon').textContent = mode === 'real' ? '🎻' : '🎹';
+  $('modeText').textContent = mode === 'real' ? 'ほんもの' : 'でんしおん';
+}
+var HOLD = {
+  vol: function () {
+    volIdx = (volIdx + 1) % VOLS.length; showVol();
+    try { localStorage.setItem('gakki-oto-vol', String(volIdx)); } catch (e) {}
+  },
+  mode: function () {
+    mode = mode === 'real' ? 'synth' : 'real'; showMode();
+    try { localStorage.setItem('gakki-oto-mode', mode); } catch (e) {}
+    if (cur.inst >= 0 && cur.queue.length) startCurrent();   /* 鳴っている曲を、新しいモードで最初から */
+  }
+};
 var holdTimer = null, holdEl = null;
 function holdPress(el) {
   holdRelease();
   holdEl = el; el.className = 'pill holding';
   holdTimer = setTimeout(function () {
     holdTimer = null; holdRelease();
-    volIdx = (volIdx + 1) % VOLS.length; showVol();
-    try { localStorage.setItem('gakki-oto-vol', String(volIdx)); } catch (e) {}
+    HOLD[el.id]();
   }, 900);
 }
 function holdRelease() {
@@ -347,6 +376,7 @@ function holdRelease() {
   if (holdEl) { holdEl.className = 'pill'; holdEl = null; }
 }
 showVol();
+showMode();
 
 var started = false;
 function start() {
@@ -366,7 +396,7 @@ try {
 var NP = passiveOK ? { passive: false } : false, lastTouch = 0;
 function find(n) {
   while (n && n !== document) {
-    if (n.id === 'vol' || n.id === 'stop') return { pill: n };
+    if (n.id === 'vol' || n.id === 'stop' || n.id === 'mode') return { pill: n };
     if (n.getAttribute && n.getAttribute('data-i') !== null) return { tile: +n.getAttribute('data-i') };
     n = n.parentNode;
   }
