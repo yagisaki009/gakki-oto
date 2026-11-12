@@ -1,0 +1,122 @@
+[
+ {
+  "id": "piano",
+  "w": 147,
+  "h": 110,
+  "color": "#fc7372"
+ },
+ {
+  "id": "guitar",
+  "w": 148,
+  "h": 110,
+  "color": "#fca64f"
+ },
+ {
+  "id": "violin",
+  "w": 153,
+  "h": 110,
+  "color": "#fdd93a"
+ },
+ {
+  "id": "drum",
+  "w": 177,
+  "h": 113,
+  "color": "#61d884"
+ },
+ {
+  "id": "tambourine",
+  "w": 131,
+  "h": 107,
+  "color": "#32d8a9"
+ },
+ {
+  "id": "mokkin",
+  "w": 199,
+  "h": 106,
+  "color": "#59abf7"
+ },
+ {
+  "id": "tekkin",
+  "w": 183,
+  "h": 91,
+  "color": "#8190f8"
+ },
+ {
+  "id": "recorder",
+  "w": 143,
+  "h": 86,
+  "color": "#c398fa"
+ },
+ {
+  "id": "flute",
+  "w": 226,
+  "h": 67,
+  "color": "#fc84b6"
+ },
+ {
+  "id": "trumpet",
+  "w": 194,
+  "h": 88,
+  "color": "#a9e24d"
+ },
+ {
+  "id": "trombone",
+  "w": 238,
+  "h": 94,
+  "color": "#fc6e69"
+ },
+ {
+  "id": "sax",
+  "w": 83,
+  "h": 94,
+  "color": "#fcab4a"
+ },
+ {
+  "id": "clarinet",
+  "w": 166,
+  "h": 92,
+  "color": "#fddb37"
+ },
+ {
+  "id": "harmonica",
+  "w": 180,
+  "h": 84,
+  "color": "#57d781"
+ },
+ {
+  "id": "ocarina",
+  "w": 140,
+  "h": 81,
+  "color": "#2cdaa8"
+ },
+ {
+  "id": "koto",
+  "w": 250,
+  "h": 106,
+  "color": "#4ba6f7"
+ },
+ {
+  "id": "shamisen",
+  "w": 196,
+  "h": 102,
+  "color": "#788af7"
+ },
+ {
+  "id": "taiko",
+  "w": 168,
+  "h": 100,
+  "color": "#bb8ff9"
+ },
+ {
+  "id": "maracas",
+  "w": 132,
+  "h": 94,
+  "color": "#fc7db0"
+ },
+ {
+  "id": "triangle",
+  "w": 154,
+  "h": 95,
+  "color": "#aee254"
+ }
+]

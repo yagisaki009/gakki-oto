@@ -1,0 +1,27 @@
+/* オフライン用：一度ひらいたら端末に保存して、電波がなくても動くようにする */
+var CACHE = 'gakki-oto-v1';
+var FILES = ['./', 'index.html', 'data.js', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png', 'art/piano.png', 'art/guitar.png', 'art/violin.png', 'art/drum.png', 'art/tambourine.png', 'art/mokkin.png', 'art/tekkin.png', 'art/recorder.png', 'art/flute.png', 'art/trumpet.png', 'art/trombone.png', 'art/sax.png', 'art/clarinet.png', 'art/harmonica.png', 'art/ocarina.png', 'art/koto.png', 'art/shamisen.png', 'art/taiko.png', 'art/maracas.png', 'art/triangle.png', 'songs/clarinet_1.m4a', 'songs/clarinet_2.m4a', 'songs/clarinet_3.m4a', 'songs/clarinet_4.m4a', 'songs/clarinet_5.m4a', 'songs/drum_1.m4a', 'songs/drum_2.m4a', 'songs/drum_3.m4a', 'songs/drum_4.m4a', 'songs/drum_5.m4a', 'songs/flute_1.m4a', 'songs/flute_2.m4a', 'songs/flute_3.m4a', 'songs/flute_4.m4a', 'songs/flute_5.m4a', 'songs/guitar_1.m4a', 'songs/guitar_2.m4a', 'songs/guitar_3.m4a', 'songs/guitar_4.m4a', 'songs/guitar_5.m4a', 'songs/harmonica_1.m4a', 'songs/harmonica_2.m4a', 'songs/harmonica_3.m4a', 'songs/harmonica_4.m4a', 'songs/harmonica_5.m4a', 'songs/koto_1.m4a', 'songs/koto_2.m4a', 'songs/koto_3.m4a', 'songs/koto_4.m4a', 'songs/koto_5.m4a', 'songs/maracas_1.m4a', 'songs/maracas_2.m4a', 'songs/maracas_3.m4a', 'songs/maracas_4.m4a', 'songs/maracas_5.m4a', 'songs/mokkin_1.m4a', 'songs/mokkin_2.m4a', 'songs/mokkin_3.m4a', 'songs/mokkin_4.m4a', 'songs/mokkin_5.m4a', 'songs/ocarina_1.m4a', 'songs/ocarina_2.m4a', 'songs/ocarina_3.m4a', 'songs/ocarina_4.m4a', 'songs/ocarina_5.m4a', 'songs/piano_1.m4a', 'songs/piano_2.m4a', 'songs/piano_3.m4a', 'songs/piano_4.m4a', 'songs/piano_5.m4a', 'songs/recorder_1.m4a', 'songs/recorder_2.m4a', 'songs/recorder_3.m4a', 'songs/recorder_4.m4a', 'songs/recorder_5.m4a', 'songs/sax_1.m4a', 'songs/sax_2.m4a', 'songs/sax_3.m4a', 'songs/sax_4.m4a', 'songs/sax_5.m4a', 'songs/shamisen_1.m4a', 'songs/shamisen_2.m4a', 'songs/shamisen_3.m4a', 'songs/shamisen_4.m4a', 'songs/shamisen_5.m4a', 'songs/taiko_1.m4a', 'songs/taiko_2.m4a', 'songs/taiko_3.m4a', 'songs/taiko_4.m4a', 'songs/taiko_5.m4a', 'songs/tambourine_1.m4a', 'songs/tambourine_2.m4a', 'songs/tambourine_3.m4a', 'songs/tambourine_4.m4a', 'songs/tambourine_5.m4a', 'songs/tekkin_1.m4a', 'songs/tekkin_2.m4a', 'songs/tekkin_3.m4a', 'songs/tekkin_4.m4a', 'songs/tekkin_5.m4a', 'songs/triangle_1.m4a', 'songs/triangle_2.m4a', 'songs/triangle_3.m4a', 'songs/triangle_4.m4a', 'songs/triangle_5.m4a', 'songs/trombone_1.m4a', 'songs/trombone_2.m4a', 'songs/trombone_3.m4a', 'songs/trombone_4.m4a', 'songs/trombone_5.m4a', 'songs/trumpet_1.m4a', 'songs/trumpet_2.m4a', 'songs/trumpet_3.m4a', 'songs/trumpet_4.m4a', 'songs/trumpet_5.m4a', 'songs/violin_1.m4a', 'songs/violin_2.m4a', 'songs/violin_3.m4a', 'songs/violin_4.m4a', 'songs/violin_5.m4a'];
+
+self.addEventListener('install', function (e) {
+  e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));
+});
+self.addEventListener('activate', function (e) {
+  e.waitUntil(caches.keys().then(function (keys) {
+    return Promise.all(keys.map(function (k) { if (k !== CACHE) return caches.delete(k); }));
+  }).then(function () { return self.clients.claim(); }));
+});
+/* 保存してあるものをすぐ返す（電波が弱くても待たない）。裏で新しい版があれば取っておく */
+self.addEventListener('fetch', function (e) {
+  var req = e.request;
+  if (req.method !== 'GET') return;
+  e.respondWith(caches.open(CACHE).then(function (c) {
+    return c.match(req, { ignoreSearch: true }).then(function (hit) {
+      var net = fetch(req).then(function (res) {
+        if (res && res.ok && res.status === 200 && req.url.indexOf(self.location.origin) === 0) c.put(req, res.clone());
+        return res;
+      });
+      if (hit) { net['catch'](function () {}); return hit; }
+      return net['catch'](function () { return c.match('index.html'); });
+    });
+  }));
+});
